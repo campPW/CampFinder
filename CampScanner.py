@@ -16,7 +16,8 @@ class CampScanner:
         self._facilityID = facilityID
         self._startDate = startDate
         self._endDate = endDate
-        self._endDateTimeObj = self.convertStrDate(self.endDate)
+        self._endDateTimeObj = self._convertStrDate(self._endDate)
+        self._startDateTimeObj = self._convertStrDate(self._startDate)
         self._availableCampsites = list()
 
     # scans through campsites in 10 day date range
@@ -24,7 +25,14 @@ class CampScanner:
     # click 'next 5 days' element
     
     def scan(self):
-        webDriver = self.setUpDriver()
+        # check that dates entered are valid
+        today = datetime.datetime.today()
+        if today > self._startDateTimeObj:
+            raise ValueError("Invalid start date. Date cannot be less than current date ")
+        elif self._startDateTimeObj == self._endDateTimeObj:
+            raise ValueError("Check-out date cannot be the same as check-in date ")
+
+        webDriver = self._setUpDriver()
         html = webDriver.page_source 
         webDriver.quit()
         soup = BeautifulSoup(html, 'html.parser')
@@ -37,34 +45,32 @@ class CampScanner:
             ariaLabelStr = str(s)
             siteDict = ariaLabelStr.split('"')
 
-            availDate = self.convertLabel(siteDict[1])
-            startDateTimeObj = self.convertStrDate(self.startDate)
-            
-            isValidDate = self.checkDateRange(availDate, startDateTimeObj, self.endDateTimeObj)
+            availDate = self._convertLabel(siteDict[1])            
+            isValidDate = self._checkDateRange(availDate, self._startDateTimeObj, self._endDateTimeObj)
             
             if isValidDate == True:
-                self.availableCampsites.append(siteDict[1]) # index 1 holds the data we want
+                self._availableCampsites.append(siteDict[1]) # index 1 holds the data we want
             
     def _setUpDriver(self):
         driver = webdriver.Firefox()
         # check if user entered a date range. If they did, automate entry of those
         # dates and search for available spots
-        if self.startDate != None and self.endDate != None:
-            driver.get(self.BASE_URL + self.facilityID)
+        if self._startDate != None and self._endDate != None:
+            driver.get(self._BASE_URL + self._facilityID)
             
             startDateElem = driver.find_element_by_id("startDate")
             endDateElem = driver.find_element_by_id("endDate")
             viewByAvailElem = driver.find_element_by_id("campground-view-by-avail")
 
             actions = ActionChains(driver)
-            actions.send_keys_to_element(startDateElem, self.startDate)
-            actions.send_keys_to_element(endDateElem, self.endDate)
+            actions.send_keys_to_element(startDateElem, self._startDate)
+            actions.send_keys_to_element(endDateElem, self._endDate)
             actions.click(viewByAvailElem)
             actions.perform()
 
         # if no date range was entered, simply return default page, which displays
         # availability from current date forward    
-            driver.get(self.BASE_URL + self.facilityID + "/availability")
+            driver.get(self._BASE_URL + self._facilityID + "/availability")
 
         # wait until the availability table is present before returning the driver
         try:
@@ -85,7 +91,7 @@ class CampScanner:
     # and convert into a datetime object
     def _convertLabel(self, label):
         sl = re.split('\W+', label)
-        month = int(self.monthToNum(sl[0]))
+        month = int(self._monthToNum(sl[0]))
         day = int(sl[1])
         year = int(sl[2])
         convertedDate = datetime.datetime(year, month, day)
@@ -117,7 +123,8 @@ class CampScanner:
         }
         return switch.get(month, 0) # if 0 is returned, month is invalid
    
-    def getAvailableSites(self):
+    def getAvailableCampSites(self):
         return self._availableCampsites
-
+    def getEndDate(self):
+        return self._endDateTimeObj
 

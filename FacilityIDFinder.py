@@ -1,16 +1,18 @@
 import json
 import sys
 import requests
-
 class FacilityIDFinder:
-
-    def __init__(self, facilityName, stateCode, jsonIdx):
-        self._facilityName = facilityName
+    # constructor takes a facility name, a comma delimited string of keywords, the 
+    # two character code for the state (e.g., CA), and an option positional index of
+    # facility if the program was already ran and returned multiples facilities
+    def __init__(self, facilityName, keywords, stateCode, jsonIdx):
+        self._facilityName = facilityName 
+        self._keywords = "," + str(keywords) # convert to string in the even 'None' keyword was passed
         self._RIDB_API_URL = "https://ridb.recreation.gov/api/v1/facilities"
         self._RIDB_API_KEY = "fda71395-e44c-4ee7-b0d2-acce1f07afc8"
         self._stateCode = stateCode
         self._jsonIdx = jsonIdx
-        self._RIDB_API_PAYLOAD = {'query': self._facilityName,'limit': 3, 'offset' : 0,
+        self._RIDB_API_PAYLOAD = {'query': self._facilityName + self._keywords, 'limit': 3, 'offset' : 0,
          'state': self._stateCode, 'full': "false", 'apikey': self._RIDB_API_KEY}
         self._facilityID = self.findFacilityID()
     
@@ -36,7 +38,7 @@ class FacilityIDFinder:
                     print(str(index) + ".", f['FacilityName'])
 
                 print("Note the index of the desired facility and pass as argument to"
-                    + "FacilityIDFinder constructor")
+                    + " FacilityIDFinder constructor")
                 sys.exit()
             # otherwise, just grab the single facility ID
             else:

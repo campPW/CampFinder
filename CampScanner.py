@@ -26,7 +26,8 @@ class CampScanner:
     
     def scan(self):
         # check that dates entered are valid
-        today = datetime.datetime.today()
+        today = datetime.date.today()
+
         if today > self._startDateTimeObj:
             raise ValueError("Invalid start date. Date cannot be less than current date ")
         elif self._startDateTimeObj == self._endDateTimeObj:
@@ -94,7 +95,7 @@ class CampScanner:
         month = int(self._monthToNum(sl[0]))
         day = int(sl[1])
         year = int(sl[2])
-        convertedDate = datetime.datetime(year, month, day)
+        convertedDate = datetime.date(year, month, day)
         return convertedDate
 
     # convert start or end date to a datetime object
@@ -103,7 +104,7 @@ class CampScanner:
         month = int(sd[0])
         day = int(sd[1])
         year = int(sd[2])
-        convertedDate = datetime.datetime(year, month, day)
+        convertedDate = datetime.date(year, month, day)
         return convertedDate
 
     def _monthToNum(self, month):

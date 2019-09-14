@@ -35,13 +35,16 @@ class FacilityIDFinder:
                 print("More than one facility found: ")
 
                 for index, f in enumerate(parsedJson['RECDATA']):
-                    print(str(index) + ".", f['FacilityName'])
+                    print("Index " + str(index) + ": " + "".join(f['FacilityName']))
 
                 print("Note the index of the desired facility and pass as argument to"
                     + " FacilityIDFinder constructor")
                 sys.exit()
-            # otherwise, just grab the single facility ID
-            else:
+            # check that the list is not empty
+            elif len(parsedJson['RECDATA']) == 0:
+                print("The API failed to return any campsites using the given search parameters")
+                sys.exit()
+            # if the API does not return multiple sites or zero sites, grab the single facility ID
                 fID = (parsedJson['RECDATA'][0]['FacilityID']) 
         # if index was specified, just grab the ID of the facility at that index
         else:

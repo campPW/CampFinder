@@ -3,15 +3,15 @@ from email.mime.text import MIMEText
 import smtplib
 
 class Notifier:
-    def __init__(self, password, targetEmail, subject, body):
-        self._NOTIFIER_EMAIL = "frankgastle@gmail.com"
-        self._password = password
-        self._targetEmail = targetEmail
-        self._body = body
-        self._subject = subject
-        self._message = self.buildMessage()
+    def __init__(self, password, notifierEmail, targetEmail, subject, body):
+        self.NOTIFIER_EMAIL = notifierEmail
+        self.password = password
+        self.targetEmail = targetEmail
+        self.body = body
+        self.subject = subject
+        self.message = self.buildMessage()
 
-    def _buildMessage(self):
+    def buildMessage(self):
         msg = MIMEMultipart()
         msg['From'] = self.NOTIFIER_EMAIL
         msg['To'] = self.targetEmail

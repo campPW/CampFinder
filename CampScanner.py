@@ -18,7 +18,7 @@ class CampScanner:
         self._endDate = endDate
         self._endDateTimeObj = self._convertStrDate(self._endDate)
         self._startDateTimeObj = self._convertStrDate(self._startDate)
-        self._availableCampsites = list()
+        self._siteList = []
 
     # scans through campsites in 10 day date range
     # TODO: add ability to scan for longer date ranges. Would need to automate browser to
@@ -37,11 +37,13 @@ class CampScanner:
         html = webDriver.page_source 
         webDriver.quit()
         soup = BeautifulSoup(html, 'html.parser')
-        availSites = soup.find_all("td", "available")
+        availSitesStrs = soup.find_all("td", "available")
         
         # iterate through each button returned by BeautifulSoup that represents
-        #  an available site and parse out the site info (date & site number) 
-        for site in availSites:
+        # an available site and parse out the site info (date & site number) 
+        availSiteStrList = list()
+
+        for site in availSitesStrs:
             s = site.find('button')
             ariaLabelStr = str(s)
             siteDict = ariaLabelStr.split('"')
@@ -50,8 +52,30 @@ class CampScanner:
             isValidDate = self._checkDateRange(availDate, self._startDateTimeObj, self._endDateTimeObj)
             
             if isValidDate == True:
-                self._availableCampsites.append(siteDict[1]) # index 1 holds the data we want
+                availSiteStrList.append(siteDict[1]) # index 1 holds the data we want
+        
+        if availSiteStrList:
+            self._createAvailabilityList(availSiteStrList)
             
+    def _createAvailabilityList(self, availSiteStrList):
+        self._siteList = [None] * 200
+
+        for siteStr in availSiteStrList:
+
+            splitStr = re.findall(r'\s|,|[^,\s]+', siteStr)
+            month = self._monthToNum(splitStr[0])
+            day = int(splitStr[2])
+            year = int(splitStr[5])
+            site = int(splitStr[11])
+
+            dateAvailable = datetime.date(year, month, day)
+
+            if self._siteList[site] is None:
+                self._siteList[site] = [site]
+                self._siteList[site].append(dateAvailable)
+            else:
+                self._siteList[site].append(dateAvailable)
+
     def _setUpDriver(self):
         driver = webdriver.Firefox()
         # check if user entered a date range. If they did, automate entry of those
@@ -125,7 +149,13 @@ class CampScanner:
         return switch.get(month, 0) # if 0 is returned, month is invalid
    
     def getAvailableCampSites(self):
-        return self._availableCampsites
+        publicList = []
+        for campsite in self._siteList:
+            if campsite:
+                publicList.append(campsite)
+        return publicList
+
+        return self._siteList
     def getEndDate(self):
         return self._endDateTimeObj
 

@@ -5,11 +5,11 @@ class FacilityIDFinder:
     # constructor takes a facility name, a comma delimited string of keywords, the 
     # two character code for the state (e.g., CA), and an option positional index of
     # facility if the program was already ran and returned multiples facilities
-    def __init__(self, facilityName, keywords, stateCode, jsonIdx):
+    def __init__(self, apiKey, facilityName, keywords, stateCode, jsonIdx):
         self._facilityName = facilityName 
         self._keywords = "," + str(keywords) # convert to string in the even 'None' keyword was passed
         self._RIDB_API_URL = "https://ridb.recreation.gov/api/v1/facilities"
-        self._RIDB_API_KEY = "fda71395-e44c-4ee7-b0d2-acce1f07afc8"
+        self._RIDB_API_KEY = apiKey
         self._stateCode = stateCode
         self._jsonIdx = jsonIdx
         self._RIDB_API_PAYLOAD = {'query': self._facilityName + self._keywords, 'limit': 3, 'offset' : 0,
@@ -29,22 +29,22 @@ class FacilityIDFinder:
         
         # check if index was specified
         if self._jsonIdx == None:
-        # if the API call returns more than a single facility, print
-        # the facility names and exit the program
-            if len(parsedJson['RECDATA']) > 1:
+            # check that the list is not empty
+            if len(parsedJson['RECDATA']) == 0:
+                print("The API failed to return any campsites using the given search parameters")
+                sys.exit()
+            elif len(parsedJson['RECDATA']) > 1:
                 print("More than one facility found: ")
-
+                # if the API call returns more than a single facility, print
+                # the facility names and exit the program
                 for index, f in enumerate(parsedJson['RECDATA']):
                     print("Index " + str(index) + ": " + "".join(f['FacilityName']))
 
                 print("Note the index of the desired facility and pass as argument to"
                     + " FacilityIDFinder constructor")
                 sys.exit()
-            # check that the list is not empty
-            elif len(parsedJson['RECDATA']) == 0:
-                print("The API failed to return any campsites using the given search parameters")
-                sys.exit()
-            # if the API does not return multiple sites or zero sites, grab the single facility ID
+            # if the API does not return multiple sites or zero sites, and jsonIdx is null, grab the single facility ID
+            elif not self._jsonIdx:
                 fID = (parsedJson['RECDATA'][0]['FacilityID']) 
         # if index was specified, just grab the ID of the facility at that index
         else:

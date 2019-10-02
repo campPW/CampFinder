@@ -58,10 +58,13 @@ class CampScanner:
             self._createAvailabilityList(availSiteStrList)
             
     def _createAvailabilityList(self, availSiteStrList):
-        self._siteList = [None] * 200
-
+        tmpList = [None] * 200
+        # this will be used to ensure that a notfication is only sent if sites are available 
+        # for each day specified by the user. 
+        lengthOfStay = self._endDateTimeObj.day - self._startDateTimeObj.day + 1
+        # parse out the strings the "site X is available" strings and turn into 
+        # workable datetime objects
         for siteStr in availSiteStrList:
-
             splitStr = re.findall(r'\s|,|[^,\s]+', siteStr)
             month = self._monthToNum(splitStr[0])
             day = int(splitStr[2])
@@ -69,12 +72,18 @@ class CampScanner:
             site = int(splitStr[11])
 
             dateAvailable = datetime.date(year, month, day)
-
-            if self._siteList[site] is None:
-                self._siteList[site] = [site]
-                self._siteList[site].append(dateAvailable)
+            # mapping an index in the list to the current site
+            if tmpList[site] is None:
+                tmpList[site] = [site]
+                tmpList[site].append(dateAvailable)
+            # if the index already contains the corresponding site, we just add the date its available
             else:
-                self._siteList[site].append(dateAvailable)
+                tmpList[site].append(dateAvailable)
+        # Create a final list with only the sites that are actually available, i.e., ignore all indexes with
+        # sites that are not available the entire date range specified by user and indexes that are empty
+        for campsite in tmpList:
+            if campsite and len(campsite) == lengthOfStay:
+                self._siteList.append(campsite)
 
     def _setUpDriver(self):
         driver = webdriver.Firefox()
@@ -149,13 +158,8 @@ class CampScanner:
         return switch.get(month, 0) # if 0 is returned, month is invalid
    
     def getAvailableCampSites(self):
-        publicList = []
-        for campsite in self._siteList:
-            if campsite:
-                publicList.append(campsite)
-        return publicList
-
         return self._siteList
+
     def getEndDate(self):
         return self._endDateTimeObj
 

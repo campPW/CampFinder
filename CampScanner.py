@@ -12,7 +12,8 @@ import re
 class CampScanner:
 
     def __init__(self, facilityID, startDate, endDate):
-        self._BASE_URL = "https://www.recreation.gov/camping/campgrounds/"
+        self._CAMPGROUND_URL = "https://www.recreation.gov/camping/campgrounds/"
+        self._SITE_URL = "https://www.recreation.gov/camping/campsites/"
         self._facilityID = facilityID
         self._startDate = startDate
         self._endDate = endDate
@@ -24,15 +25,8 @@ class CampScanner:
     # TODO: add ability to scan for longer date ranges. Would need to automate browser to
     # click 'next 5 days' element
     
-    def scan(self):
-        # check that dates entered are valid
-        today = datetime.date.today()
-
-        if today > self._startDateTimeObj:
-            raise ValueError("Invalid start date. Date cannot be less than current date ")
-        elif self._startDateTimeObj == self._endDateTimeObj:
-            raise ValueError("Check-out date cannot be the same as check-in date ")
-
+    def scanCampground(self):
+        self._verifyDates()
         webDriver = self._setUpDriver()
         html = webDriver.page_source 
         webDriver.quit()
@@ -62,7 +56,8 @@ class CampScanner:
         # this will be used to ensure that a notfication is only sent if sites are available 
         # for each day specified by the user. 
         lengthOfStay = self._endDateTimeObj.day - self._startDateTimeObj.day + 1
-        # parse out the strings the "site X is available" strings and turn into 
+
+        # parse out "site X is available" strings and turn into 
         # workable datetime objects
         for siteStr in availSiteStrList:
             splitStr = re.findall(r'\s|,|[^,\s]+', siteStr)
@@ -80,38 +75,47 @@ class CampScanner:
             else:
                 tmpList[site].append(dateAvailable)
         # Create a final list with only the sites that are actually available, i.e., ignore all indexes with
-        # sites that are not available the entire date range specified by user and indexes that are empty
+        # sites that are not available during the date range specified by user, and ignore indexes that are empty
         for campsite in tmpList:
-            if campsite and len(campsite) == lengthOfStay:
+            if campsite and len(campsite) - 1 == lengthOfStay:
                 self._siteList.append(campsite)
 
-    def _setUpDriver(self):
+    def _setUpDriver(self, siteID):
         driver = webdriver.Firefox()
-        # check if user entered a date range. If they did, automate entry of those
-        # dates and search for available spots
-        if self._startDate != None and self._endDate != None:
-            driver.get(self._BASE_URL + self._facilityID)
-            
+        actions = ActionChains(driver)
+        # if a siteID was not passed, tailor selenium driver for the general campground availability page
+        if siteID is not None:
+            driver.get(self._SITE_URL + siteID)
             startDateElem = driver.find_element_by_id("startDate")
             endDateElem = driver.find_element_by_id("endDate")
-            viewByAvailElem = driver.find_element_by_id("campground-view-by-avail")
-
-            actions = ActionChains(driver)
             actions.send_keys_to_element(startDateElem, self._startDate)
             actions.send_keys_to_element(endDateElem, self._endDate)
-            actions.click(viewByAvailElem)
             actions.perform()
+        else:
+            # check if user entered a date range. If they did, automate entry of those
+            # dates and search for available spots
+            if self._startDate != None and self._endDate != None:
+                driver.get(self._CAMPGROUND_URL + self._facilityID)
 
-        # if no date range was entered, simply return default page, which displays
-        # availability from current date forward    
-            driver.get(self._BASE_URL + self._facilityID + "/availability")
+                startDateElem = driver.find_element_by_id("startDate")
+                endDateElem = driver.find_element_by_id("endDate")
+                viewByAvailElem = driver.find_element_by_id("campground-view-by-avail")
 
-        # wait until the availability table is present before returning the driver
-        try:
-            elem = WebDriverWait(driver, 25).until(EC.presence_of_element_located(
-                By.CLASS_NAME, "camp-sortable-contents"))
-        finally:
-            return driver
+                actions.send_keys_to_element(startDateElem, self._startDate)
+                actions.send_keys_to_element(endDateElem, self._endDate)
+                actions.click(viewByAvailElem)
+                actions.perform()
+            # if no date range was entered, simply return default page, which displays
+            # availability from current date forward   
+            else: 
+                driver.get(self._CAMPGROUND_URL + self._facilityID + "/availability")
+            # wait until the availability table is present before returning the driver
+            try:
+                elem = WebDriverWait(driver, 25).until(EC.presence_of_element_located(By.CLASS_NAME, "camp-sortable-contents"))
+            except:
+                print("Cannot find element: camp-sortable-contents")
+
+        return driver
 
     def _checkDateRange(self, availDate, startDate, endDate):
         # check that the date is not less than or greater than the start and
@@ -156,7 +160,18 @@ class CampScanner:
             "Dec" : 12,
         }
         return switch.get(month, 0) # if 0 is returned, month is invalid
-   
+
+    def _verifyDates(self):
+        # check that dates entered are valid
+        today = datetime.date.today()
+
+        if today > self._startDateTimeObj:
+            raise ValueError("Invalid start date. Date cannot be less than current date ")
+        elif self._startDateTimeObj == self._endDateTimeObj:
+            raise ValueError("Check-out date cannot be the same as check-in date ")
+        else:
+            print("dates are valid")
+
     def getAvailableCampSites(self):
         return self._siteList
 

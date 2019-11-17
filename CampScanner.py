@@ -10,7 +10,7 @@ import time
 import re
 
 class CampScanner:
-
+    
     def __init__(self, facilityID, startDate, endDate):
         self._CAMPGROUND_URL = "https://www.recreation.gov/camping/campgrounds/"
         self._SITE_URL = "https://www.recreation.gov/camping/campsites/"
@@ -21,13 +21,25 @@ class CampScanner:
         self._startDateTimeObj = self._convertStrDate(self._startDate)
         self._siteList = []
 
+    def scanCampsite(self, siteNumber):
+        self._verifyDates()
+        isAvailable = False
+        webdriver = self._setUpDriver(siteNumber)
+        html = webdriver.page_source
+        webdriver.quit()
+        soup = BeautifulSoup(html, 'html.parser')
+        bookingBtn = soup.find(id ="add-cart-campsite")
+        # if a booking button is present on the webpage, the site is available for reservation
+        if bookingBtn is not None:
+            isAvailable = True
+        return isAvailable
+
     # scans through campsites in 10 day date range
     # TODO: add ability to scan for longer date ranges. Would need to automate browser to
     # click 'next 5 days' element
-    
     def scanCampground(self):
         self._verifyDates()
-        webDriver = self._setUpDriver()
+        webDriver = self._setUpDriver(None)
         html = webDriver.page_source 
         webDriver.quit()
         soup = BeautifulSoup(html, 'html.parser')
@@ -83,37 +95,42 @@ class CampScanner:
     def _setUpDriver(self, siteID):
         driver = webdriver.Firefox()
         actions = ActionChains(driver)
-        # if a siteID was not passed, tailor selenium driver for the general campground availability page
+        # if a siteID was passed, tailor selenium driver for the general campground availability page
         if siteID is not None:
             driver.get(self._SITE_URL + siteID)
             startDateElem = driver.find_element_by_id("startDate")
             endDateElem = driver.find_element_by_id("endDate")
+            bannerElem = driver.find_element_by_class_name("rec-hero-body")
+            
             actions.send_keys_to_element(startDateElem, self._startDate)
             actions.send_keys_to_element(endDateElem, self._endDate)
+            actions.click(bannerElem)
             actions.perform()
-        else:
-            # check if user entered a date range. If they did, automate entry of those
-            # dates and search for available spots
-            if self._startDate != None and self._endDate != None:
-                driver.get(self._CAMPGROUND_URL + self._facilityID)
+        # check if user entered a date range. If they did, automate entry of those
+        # dates and search for available spots  
+        elif self._startDate != None and self._endDate != None:
+            driver.get(self._CAMPGROUND_URL + self._facilityID)
+            startDateElem = driver.find_element_by_id("startDate")
+            endDateElem = driver.find_element_by_id("endDate")
+            bannerElem = driver.find_element_by_class_name("rec-hero-body")
+            viewByAvailElem = driver.find_element_by_id("campground-view-by-avail")
+            
+            actions.send_keys_to_element(startDateElem, self._startDate)
+            actions.send_keys_to_element(endDateElem, self._endDate)
+            actions.click(bannerElem)
+            actions.click(viewByAvailElem)
+            actions.perform()
+        # if no date range was entered, simply return default page, which displays
+        # availability from current date forward   
+        else: 
+            driver.get(self._CAMPGROUND_URL + self._facilityID + "/availability")
 
-                startDateElem = driver.find_element_by_id("startDate")
-                endDateElem = driver.find_element_by_id("endDate")
-                viewByAvailElem = driver.find_element_by_id("campground-view-by-avail")
-
-                actions.send_keys_to_element(startDateElem, self._startDate)
-                actions.send_keys_to_element(endDateElem, self._endDate)
-                actions.click(viewByAvailElem)
-                actions.perform()
-            # if no date range was entered, simply return default page, which displays
-            # availability from current date forward   
-            else: 
-                driver.get(self._CAMPGROUND_URL + self._facilityID + "/availability")
-            # wait until the availability table is present before returning the driver
-            try:
-                elem = WebDriverWait(driver, 25).until(EC.presence_of_element_located(By.CLASS_NAME, "camp-sortable-contents"))
-            except:
-                print("Cannot find element: camp-sortable-contents")
+        # TODO: fix webdriverwait for slower connections
+        # wait until the availability table is present before returning the driver
+        try:
+            elem = WebDriverWait(driver, 60).until(EC.presence_of_element_located(By.CLASS_NAME, "camp-sortable-contents"))
+        except:
+            print("Cannot find element: camp-sortable-contents")
 
         return driver
 

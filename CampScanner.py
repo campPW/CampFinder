@@ -28,10 +28,10 @@ class CampScanner:
         html = webdriver.page_source
         webdriver.quit()
         soup = BeautifulSoup(html, 'html.parser')
-        bookingBtn = soup.find(id ="add-cart-campsite")
-        # if a booking button is present on the webpage, the site is available for reservation
-        if bookingBtn is not None:
+        bookingBtn = soup.find(id='add-cart-campsite').span.span.string
+        if str(bookingBtn).find("Booking") != -1:
             isAvailable = True
+
         return isAvailable
 
     # scans through campsites in 10 day date range
@@ -128,9 +128,9 @@ class CampScanner:
         # TODO: fix webdriverwait for slower connections
         # wait until the availability table is present before returning the driver
         try:
-            elem = WebDriverWait(driver, 60).until(EC.presence_of_element_located(By.CLASS_NAME, "camp-sortable-contents"))
+            wait = WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located)
         except:
-            print("Cannot find element: camp-sortable-contents")
+            print("Exceeded WebDriverWait time.")
 
         return driver
 

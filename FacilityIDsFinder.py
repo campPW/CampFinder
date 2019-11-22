@@ -4,11 +4,11 @@ import requests
 
 class FacilityIDsFinder:
     # constructor takes a facility name, a comma delimited string of keywords, the 
-    # two character code for the state (e.g., CA), and an option positional index of
-    # facility if the program was already ran and returned multiples facilities
+    # two character code for the state (e.g., CA), and an optional positional index of
+    # facility if the program was already ran and returned multiple facilities
     def __init__(self, apiKey, facilityName, keywords, stateCode, jsonIdx):
         self._facilityName = facilityName 
-        self._keywords = "," + str(keywords) # convert to string in the even 'None' keyword was passed
+        self._keywords = "," + str(keywords) # convert to string in the event 'None' keyword was passed
         self._RIDB_API_URL = "https://ridb.recreation.gov/api/v1/facilities"
         self._RIDB_API_KEY = apiKey
         self._stateCode = stateCode

@@ -1,0 +1,1 @@
+Python modules to aid in finding reservable campsites at Recreation.gov facilities. Note the driver for the browser must be installed before using the CampScanner module (default browser is Firefox). Instructions can be found [here](https://selenium-python.readthedocs.io/installation.html#drivers).

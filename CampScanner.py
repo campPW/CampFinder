@@ -93,7 +93,7 @@ class CampScanner:
                 self._siteList.append(campsite)
 
     def _setUpDriver(self, siteID):
-        driver = webdriver.Firefox()
+        driver = webdriver.Firefox() # change to whichever supported browser you are using.
         actions = ActionChains(driver)
         # if a siteID was passed, tailor selenium driver for the general campground availability page
         if siteID is not None:

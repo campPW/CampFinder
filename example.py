@@ -11,7 +11,7 @@ if __name__ == "__main__":
     by going directly to the campground webpage where the 6 digit number at the end of the URL is the facility id 
     '''
     
-    apiKey = "fda71395-e44c-4ee7-b0d2-acce1f07afc8"
+    apiKey = "your api key here"
     facilityName = "Jumbo Rocks Campground"
     keywords = "Joshua Tree National Park, desert, hiking"
     state = "CA"

@@ -3,7 +3,7 @@ import sys
 import requests
 
 class FacilityIDsFinder:
-    # constructor takes a facility name, a comma delimited string of keywords (pass None if not using keywords), the 
+    # constructor takes an api key, facility name, a comma delimited string of keywords (pass None if not using keywords), the 
     # two character code for the state (e.g., CA), and an optional positional index of
     # facility if the program was already ran and returned multiple facilities
     def __init__(self, apiKey, facilityName, keywords, stateCode, jsonIdx):

@@ -33,6 +33,7 @@ if __name__ == "__main__":
             break
         time.sleep(900) # wait 900 secs/15 mins before scanning again
 
+    print("Campsites Available. Sending notification...")
     # parameters to Notifier
     password = "password1234" # put sending email password here
     sEmailAddr = "example@email.com" # sending email address here

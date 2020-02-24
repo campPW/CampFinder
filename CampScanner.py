@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -41,6 +42,8 @@ class CampScanner:
         self._verifyDates()
         webDriver = self._setUpDriver(None)
         html = webDriver.page_source 
+
+        print("Closing WebDriver...")
         webDriver.quit()
         soup = BeautifulSoup(html, 'html.parser')
         availSitesStrs = soup.find_all("td", "available")
@@ -93,7 +96,11 @@ class CampScanner:
                 self._siteList.append(campsite)
 
     def _setUpDriver(self, siteID):
-        driver = webdriver.Firefox() # change to whichever supported browser you are using.
+        print("Setting up WebDriver...")
+        # get firefox options to enable headless firefox
+        firefoxOptions = Options()
+        firefoxOptions.headless = True
+        driver = webdriver.Firefox(options = firefoxOptions) # change to whichever supported browser you are using.
         actions = ActionChains(driver)
         # if a siteID was passed, tailor selenium driver for the general campground availability page
         if siteID is not None:
@@ -102,6 +109,7 @@ class CampScanner:
             endDateElem = driver.find_element_by_id("endDate")
             bannerElem = driver.find_element_by_class_name("rec-hero-body")
             
+            print("Executing headless WebDriver...")
             actions.send_keys_to_element(startDateElem, self._startDate)
             actions.send_keys_to_element(endDateElem, self._endDate)
             actions.click(bannerElem)
@@ -187,7 +195,7 @@ class CampScanner:
         elif self._startDateTimeObj == self._endDateTimeObj:
             raise ValueError("Check-out date cannot be the same as check-in date ")
         else:
-            print("dates are valid")
+            print("Dates validated...")
 
     def getAvailableCampSites(self):
         return self._siteList
